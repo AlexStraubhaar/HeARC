@@ -1,0 +1,1 @@
+http://stackoverflow.com/questions/16432804/recording-fps-in-webgl
