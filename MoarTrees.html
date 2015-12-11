@@ -7,8 +7,10 @@
     <script src="../Stuff/js/gl-matrix-min.js"></script>
     <script src="../Stuff/js/webglTools.js"></script>
     <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 aVertexNormal;attribute vec3 aVertexPosition;
-        attribute vec2 aTextureCoord;
+
+        // Communs
+        attribute vec3 aVertexNormal;
+        attribute vec3 aVertexPosition;
         uniform mat4 uNMatrix;
         uniform mat4 uMVMatrix;
         uniform mat4 uPMatrix;
@@ -17,9 +19,25 @@
         varying vec3 vNormal;
         varying vec3 vLightRay;
         varying vec3 vEyeVec;
+
+        // Pour les arbres
+        attribute vec2 aTextureCoord;
+
+        // Pour le terrain
+        varying vec3 savingVertex;
+        varying float seaLvl;
+
         void main(void)
         {
-            vTextureCoord=aTextureCoord;vec4 vertex=uMVMatrix * vec4(aVertexPosition, 1.0);
+            // Terrain
+            seaLvl = 10.0;
+            savingVertex = aVertexPosition;
+            vec3 passVertex = aVertexPosition;
+            if(passVertex.y < seaLvl)
+                passVertex.y = seaLvl;
+
+            vTextureCoord=aTextureCoord;
+            vec4 vertex=uMVMatrix * vec4(aVertexPosition, 1.0);
             vNormal=vec3(uNMatrix * vec4(aVertexNormal, 1.0));
             vec4 light=vec4(uLightPosition,1.0);
             vLightRay=vertex.xyz - light.xyz;vEyeVec=-vec3(vertex.xyz);
@@ -30,17 +48,50 @@
         #ifdef GL_ES 
         precision highp float;
         #endif
+
+        // Communs
         uniform float uShininess;
         uniform vec3 uLightAmbient;
         uniform vec3 uMaterialDiffuse;
         uniform vec3 uMaterialSpecular;
-        uniform sampler2D uColorTexture;
-        varying vec2 vTextureCoord;
         varying vec3 vNormal;
         varying vec3 vLightRay;
         varying vec3 vEyeVec;
+
+        // Arbres
+        uniform sampler2D uColorTexture;
+        varying vec2 vTextureCoord;
+
+        // Terrain
+        uniform int uDrawNormal;
+        uniform float uWave;
+        varying float seaLvl;
+
         void main(void)
         {
+            // Différents reliefs possibles
+            float h0 = seaLvl - 5.0; float h1 = seaLvl - 3.0;
+            float h2 = seaLvl - 1.0; float h3 = seaLvl;
+            float h4 = seaLvl + 6.0; float h5 = seaLvl + 8.0;
+            float h6 = seaLvl + 10.0; float h7 seaLvl + 12.0;
+            float h8 = seaLvl + 14.0; float minH = 0.3;
+            // Et leurs couleurs
+            vec3 color0 = vec3(0.131, 0.139, 0.776);
+            vec3 color1 = vec3(0.505, 0.623, 0.905);
+            vec3 color2 = vec3(0.674, 0.788, 1.000);
+            vec3 color3 = vec3(0.074, 0.494, 0.188);
+            vec3 color4 = vec3(0.549, 0.599, 0.315);
+            vec3 color5 = vec3(0.890, 0.792, 0.439);
+            vec3 color6 = vec3(0.627, 0.858, 0.915);
+            vec3 color7 = vec3(0.901, 0.945, 0.941);
+            vec3 color8 = vec3(1.000, 1.000, 1.000);
+            vec3 finalColor = uMaterialDiffuse;
+            finalColor = uLightAmbient;
+            float h = savingVertex.y;
+            vec3 heightColor1;
+            vec3 heightColor2;
+            float perc;
+
             // Initialisation de la couleur et de la lumière
             vec3 L=normalize(vLightRay);
             vec3 N=normalize(vNormal);
@@ -383,7 +434,7 @@
 </head>
 <body onload="initWebGL()">
     <script>
-        displayTitle("Better Forest", 1, 1, 1, 1, 1, 1, 1);
+        displayTitle("Moar Trees", 1, 1, 1, 1, 1, 1, 1);
     </script>
     <p>Display a forest with random number of threes of random dimensions</p>
     <p>Possible interactions:</p>
