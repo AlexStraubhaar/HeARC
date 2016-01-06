@@ -8,7 +8,7 @@
     <script src="js/webglTools.js"></script>
 
     <!-- Trees shaders -->
-    <script id="shader-vs" type="x-shader/x-vertex">
+    <script id="trees-vs" type="x-shader/x-vertex">
 
         attribute vec3 aVertexNormal;
         attribute vec3 aVertexPosition;
@@ -32,8 +32,8 @@
             gl_Position=uPMatrix * vertex;
         }
     </script>
-    <script id="shader-fs" type="x-shader/x-fragment">
-        #ifdef GL_ES 
+    <script id="trees-fs" type="x-shader/x-fragment">
+        #ifdef GL_ES
         precision highp float;
         #endif
 
@@ -71,6 +71,152 @@
             finalColor=texelColor.xyz * finalColor;
             gl_FragColor=vec4(finalColor, alpha);
         }
+    </script>
+
+    <!-- Terrain shaders -->
+    <script id="terrain-vs" type="x-shader/x-vertex">
+      attribute vec3 aVertexPosition;
+      attribute vec3 aVertexNormal;
+      uniform mat4 uMVMatrix;
+      uniform mat4 uPMatrix;
+      uniform mat4 uNMatrix;
+      uniform vec3 uLightPosition;
+      varying vec3 vNormal;
+      varying vec3 vLightRay;
+      varying vec3 vEyeVec;
+      varying vec3 savingVertex;
+      varying float seaLvl;
+      void main(void)
+      {
+          seaLvl=10.0;
+          savingVertex=aVertexPosition;
+          vec3 passVertex=aVertexPosition;
+          if( passVertex.y < seaLvl )
+              passVertex.y=seaLvl;
+          // ----------------------------------
+          vec4 vertex=uMVMatrix * vec4(passVertex, 1.0);
+          vNormal=vec3(uNMatrix * vec4(aVertexNormal, 1.0));
+          vec4 light=vec4(uLightPosition,1.0);
+          vLightRay=- light.xyz; vEyeVec=-vec3(vertex.xyz);
+          gl_Position=uPMatrix * vertex;
+      }
+    </script>
+
+    <script id="terrain-fs" type="x-shader/x-fragment">
+      #ifdef GL_ES
+      precision highp float;
+      #endif
+      uniform int uDrawNormal;
+      uniform float uShininess;
+      uniform float uWave;
+      uniform vec3 uLightAmbient;
+      uniform vec3 uMaterialDiffuse;
+      uniform vec3 uMaterialSpecular;
+      varying vec3 vNormal;
+      varying vec3 vLightRay;
+      varying vec3 vEyeVec;
+      varying vec3 savingVertex;
+      varying float seaLvl;
+
+      void main(void)
+      {
+          float h0=seaLvl-5.0;float h1=seaLvl-3.0;
+          float h2=seaLvl-1.0;float h3=seaLvl;
+          float h4=seaLvl+6.0;float h5=seaLvl+8.0;
+          float h6=seaLvl+10.0;float h7=seaLvl+12.0;
+          float h8=seaLvl+14.0;float minH=0.3;
+          vec3 color0=vec3(0.131,0.139,0.776);
+          vec3 color1=vec3(0.505,0.623,0.905);
+          vec3 color2=vec3(0.674,0.788,1.000);
+          vec3 color3=vec3(0.074,0.494,0.188);
+          vec3 color4=vec3(0.549,0.599,0.315);
+          vec3 color5=vec3(0.890,0.792,0.439);
+          vec3 color6=vec3(0.627,0.858,0.915);
+          vec3 color7=vec3(0.901,0.945,0.941);
+          vec3 color8=vec3(1.000,1.000,1.000);
+          vec3 finalColor=uMaterialDiffuse;
+          vec3 L=normalize(vLightRay);
+          vec3 N=normalize(vNormal);
+          float lambertTerm=dot(N,-L);
+          finalColor=uLightAmbient;
+          float h=savingVertex.y;
+          vec3 heightColor1;
+          vec3 heightColor2;
+          float perc;
+
+          // Définition de différentes couleurs qui seront appliquées
+          //au terrain suivant la hauteur
+          if( h < h0 )
+          {
+              heightColor1=color0;
+              heightColor2=color0;
+              perc=1.0;
+          }
+          else if( h < h1 )
+          {
+              heightColor1=color0;
+              heightColor2=color1;
+              perc=(h1-h)/(h1-h0);
+          }
+          else if( h < h2 )
+          {
+              heightColor1=color1;
+              heightColor2=color2;
+              perc=(h2-h)/(h2-h1)+ uWave;
+              if(perc>1.0) perc-=1.0;
+          }
+          else if( h < h3 )
+          {
+              heightColor1=color2;
+              heightColor2=color3;
+              perc=(h3-h)/(h3-h2);
+          }
+          else if( h < h4 )
+          {
+              heightColor1=color3;
+              heightColor2=color4;
+              perc=(h4-h)/(h4-h3);
+          }
+          else if( h < h5 )
+          {
+              heightColor1=color4;
+              heightColor2=color5;
+              perc=(h5-h)/(h5-h4);
+          }
+          else if( h < h6 )
+          {
+              heightColor1=color5;
+              heightColor2=color6;
+              perc=(h6-h)/(h6-h5);
+          }
+          else if( h < h7 )
+          {
+              heightColor1=color6;
+              heightColor2=color7;
+              perc=(h7-h)/(h7-h6);
+          }
+          else if( h < h8 )
+          {
+              heightColor1=color7;
+              heightColor2=color8;
+              perc=(h8-h)/(h8-h7);
+          }
+          else
+          {
+              heightColor1=color8;
+              heightColor2=color8;
+              perc=1.0;
+          }
+          heightColor1=heightColor1*perc + heightColor2*(1.0-perc);
+          vec3 diffuseCol=heightColor1;
+          if( (h>=h2) && (lambertTerm > 0.0))
+          {
+              diffuseCol=heightColor1 * lambertTerm;
+          }
+          vec3 E=normalize(vEyeVec);
+          vec3 R=reflect(L, N);
+          float specular=pow( max(dot(R, E), 0.0), uShininess);
+          finalColor +=diffuseCol + uMaterialSpecular * specular;gl_FragColor=vec4(finalColor, 1.0);
     </script>
 
     <!-- Trees JS-->
@@ -275,7 +421,7 @@
         function drawATree(tree){
             currentTexID = 0;
             for(var i = -nbSteps / 2; i < nbSteps / 2; i++){
-                drawElement(tree.vertexBuffer[i], tree.normalBuffer[i]);                
+                drawElement(tree.vertexBuffer[i], tree.normalBuffer[i]);
                 currentTexID++;
             }
             drawElement(tree.vertexBufferRoots, tree.normalBufferRoots);
@@ -293,7 +439,7 @@
             for (var i = -nbSteps / 2; i < nbSteps / 2; i++) {
                 tree.rotVertices[i] = verticesRotY(vertices, degToRad(i * 180 / nbSteps));
                 tree.rotNormals[i] = verticesRotY(normals, degToRad(i * 180 / nbSteps));
-                tree.rotVertices[i] = verticesTranslation(tree.rotVertices[i], tree[0], tree[1] + tree[4] / 2, tree[2]);       
+                tree.rotVertices[i] = verticesTranslation(tree.rotVertices[i], tree[0], tree[1] + tree[4] / 2, tree[2]);
                 tree.vertexBuffer[i] = getArrayBufferWithArray(tree.rotVertices[i]);
                 tree.normalBuffer[i] = getArrayBufferWithArray(tree.rotNormals[i]);
             }
