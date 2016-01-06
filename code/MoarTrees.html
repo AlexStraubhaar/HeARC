@@ -2,13 +2,14 @@
 <html lang="fr">
 <head>
     <meta charset="utf-8" />
-    <link rel="stylesheet" href="../Stuff/css/stylesheet.css">
-    <script src="../Stuff/js/commonFunctions.js"></script>
-    <script src="../Stuff/js/gl-matrix-min.js"></script>
-    <script src="../Stuff/js/webglTools.js"></script>
+    <link rel="stylesheet" href="css/stylesheet.css">
+    <script src="js/commonFunctions.js"></script>
+    <script src="js/gl-matrix-min.js"></script>
+    <script src="js/webglTools.js"></script>
+
+    <!-- Trees shaders -->
     <script id="shader-vs" type="x-shader/x-vertex">
 
-        // Communs
         attribute vec3 aVertexNormal;
         attribute vec3 aVertexPosition;
         uniform mat4 uNMatrix;
@@ -19,23 +20,10 @@
         varying vec3 vNormal;
         varying vec3 vLightRay;
         varying vec3 vEyeVec;
-
-        // Pour les arbres
         attribute vec2 aTextureCoord;
-
-        // Pour le terrain
-        varying vec3 savingVertex;
-        varying float seaLvl;
 
         void main(void)
         {
-            // Terrain
-            seaLvl = 10.0;
-            savingVertex = aVertexPosition;
-            vec3 passVertex = aVertexPosition;
-            if(passVertex.y < seaLvl)
-                passVertex.y = seaLvl;
-
             vTextureCoord=aTextureCoord;
             vec4 vertex=uMVMatrix * vec4(aVertexPosition, 1.0);
             vNormal=vec3(uNMatrix * vec4(aVertexNormal, 1.0));
@@ -49,7 +37,6 @@
         precision highp float;
         #endif
 
-        // Communs
         uniform float uShininess;
         uniform vec3 uLightAmbient;
         uniform vec3 uMaterialDiffuse;
@@ -57,41 +44,11 @@
         varying vec3 vNormal;
         varying vec3 vLightRay;
         varying vec3 vEyeVec;
-
-        // Arbres
         uniform sampler2D uColorTexture;
         varying vec2 vTextureCoord;
 
-        // Terrain
-        uniform int uDrawNormal;
-        uniform float uWave;
-        varying float seaLvl;
-
         void main(void)
         {
-            // Différents reliefs possibles
-            float h0 = seaLvl - 5.0; float h1 = seaLvl - 3.0;
-            float h2 = seaLvl - 1.0; float h3 = seaLvl;
-            float h4 = seaLvl + 6.0; float h5 = seaLvl + 8.0;
-            float h6 = seaLvl + 10.0; float h7 seaLvl + 12.0;
-            float h8 = seaLvl + 14.0; float minH = 0.3;
-            // Et leurs couleurs
-            vec3 color0 = vec3(0.131, 0.139, 0.776);
-            vec3 color1 = vec3(0.505, 0.623, 0.905);
-            vec3 color2 = vec3(0.674, 0.788, 1.000);
-            vec3 color3 = vec3(0.074, 0.494, 0.188);
-            vec3 color4 = vec3(0.549, 0.599, 0.315);
-            vec3 color5 = vec3(0.890, 0.792, 0.439);
-            vec3 color6 = vec3(0.627, 0.858, 0.915);
-            vec3 color7 = vec3(0.901, 0.945, 0.941);
-            vec3 color8 = vec3(1.000, 1.000, 1.000);
-            vec3 finalColor = uMaterialDiffuse;
-            finalColor = uLightAmbient;
-            float h = savingVertex.y;
-            vec3 heightColor1;
-            vec3 heightColor2;
-            float perc;
-
             // Initialisation de la couleur et de la lumière
             vec3 L=normalize(vLightRay);
             vec3 N=normalize(vNormal);
@@ -115,6 +72,8 @@
             gl_FragColor=vec4(finalColor, alpha);
         }
     </script>
+
+    <!-- Trees JS-->
     <script>
         var currentTexID = 1;
         const maxSample = 5;
@@ -312,7 +271,6 @@
         // Why 33 ?
         setInterval(drawScene, 33);
 
-
         // Dessin d'un arbre
         function drawATree(tree){
             currentTexID = 0;
@@ -346,10 +304,6 @@
             tree.normalBufferRoots = getArrayBufferWithArray(tree.rotNormalsRoot);
             tree.vertexBufferRoots = getArrayBufferWithArray(tree.rotVerticesRoot);
         }
-
-
-        // Landscape generation
-        
 
         // Conversion d'angles et nombre aléatoire
         function degToRad(degrees) {
@@ -450,7 +404,7 @@
     <p id="test"></p>
 
     <p id="treeCount"> </p>
-    <canvas id="webgl-canvas" width="1500" height="500" oncontextmenu="return false;">HTML5 is not supported</canvas>
+    <canvas id="webgl-canvas" width="1500" height="1000" oncontextmenu="return false;">HTML5 is not supported</canvas>
 
 </body>
 <script id="code-js" type="text/javascript">

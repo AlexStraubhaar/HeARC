@@ -1,0 +1,22 @@
+Objectifs
+	Le plus d'arbres à 60 fps (5x plus, pas 2 de plus).
+
+Délivrable de 3 codes
+	3 façons de faire la même chose.
+
+	Programme nul
+	Programme plus rapide (déjà flyweight)
+	Programme qui bombe (flyweight dans shader ça peut le faire)
+
+2 déclinaisons
+	Au lieu de faire des arbres calculés, les recalculer à chaque fois dans la
+	render loop.
+	Trouver une autre méthode pour avoir le plus possible d'arbres.
+
+Afficher la fréquence de rafraichissement (à faire dans le code).
+
+Objectifs secondaires (faire monter 1):
+	Avoir un sol.
+	Rajouter une gestion de l'altitude.
+	Faire différents types d'arbres.
+	Navigation dans le terrain.
