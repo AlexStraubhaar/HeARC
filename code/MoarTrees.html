@@ -220,7 +220,10 @@
     </script>
 
     <script>
+        var TERRAIN_SHADER = 0;
+        var TREE_SHADER = 1;
         var shaders = [];
+        var currentShader = null;
         var currentTexID = 1;
         const maxSample = 5;
         var normalBuffer = null;
@@ -239,22 +242,28 @@
         var nMatrix = mat4.create();
         var rotObject = 0;
         var forest = new Array();
-        function initShaderParameters(prg) {
-            prg.vertexNormalAttribute = glContext.getAttribLocation(prg, "aVertexNormal");
-            glContext.enableVertexAttribArray(prg.vertexNormalAttribute);
-            prg.vertexPositionAttribute = glContext.getAttribLocation(prg, "aVertexPosition");
-            glContext.enableVertexAttribArray(prg.vertexPositionAttribute);
-            prg.textureCoordsAttribute = glContext.getAttribLocation(prg, "aTextureCoord");
-            glContext.enableVertexAttribArray(prg.textureCoordsAttribute);
-            prg.pMatrixUniform = glContext.getUniformLocation(prg, 'uPMatrix');
-            prg.mvMatrixUniform = glContext.getUniformLocation(prg, 'uMVMatrix');
-            prg.nMatrixUniform = glContext.getUniformLocation(prg, "uNMatrix");
-            prg.lightPositionUniform = glContext.getUniformLocation(prg, 'uLightPosition');
-            prg.shininessUniform = glContext.getUniformLocation(prg, 'uShininess');
-            prg.lightAmbientUniform = glContext.getUniformLocation(prg, 'uLightAmbient');
-            prg.materialDiffuseUniform = glContext.getUniformLocation(prg, 'uMaterialDiffuse');
-            prg.materialSpecularUniform = glContext.getUniformLocation(prg, 'uMaterialSpecular');
-            prg.uColorTexture = glContext.getUniformLocation(prg, "uColorTexture");
+        
+        function initShaderParameters() {
+            currentShader = shaders[TERRAIN_SHADER];
+            glContext.useProgram(currentShader);
+
+            currentShader = shaders[TREE_SHADER];
+            glContext.useProgram(currentShader);
+            currentShader.vertexNormalAttribute = glContext.getAttribLocation(currentShader, "aVertexNormal");
+            glContext.enableVertexAttribArray(currentShader.vertexNormalAttribute);
+            currentShader.vertexPositionAttribute = glContext.getAttribLocation(currentShader, "aVertexPosition");
+            glContext.enableVertexAttribArray(currentShader.vertexPositionAttribute);
+            currentShader.textureCoordsAttribute = glContext.getAttribLocation(currentShader, "aTextureCoord");
+            glContext.enableVertexAttribArray(currentShader.textureCoordsAttribute);
+            currentShader.pMatrixUniform = glContext.getUniformLocation(currentShader, 'uPMatrix');
+            currentShader.mvMatrixUniform = glContext.getUniformLocation(currentShader, 'uMVMatrix');
+            currentShader.nMatrixUniform = glContext.getUniformLocation(currentShader, "uNMatrix");
+            currentShader.lightPositionUniform = glContext.getUniformLocation(currentShader, 'uLightPosition');
+            currentShader.shininessUniform = glContext.getUniformLocation(currentShader, 'uShininess');
+            currentShader.lightAmbientUniform = glContext.getUniformLocation(currentShader, 'uLightAmbient');
+            currentShader.materialDiffuseUniform = glContext.getUniformLocation(currentShader, 'uMaterialDiffuse');
+            currentShader.materialSpecularUniform = glContext.getUniformLocation(currentShader, 'uMaterialSpecular');
+            currentShader.uColorTexture = glContext.getUniformLocation(currentShader, "uColorTexture");
         }
         function initBuffers() {
             vertices = [-1.0, -1.0, 0.0, 1.0, -1.0, 0.0, -1.0, 1.0, 0.0, 1.0, 1.0, 0.0];
@@ -301,11 +310,11 @@
 
         // Initialisation des effets de lumière
         function initLights() {
-            glContext.uniform3f(prg.lightPositionUniform, 1, 1, 1);
-            glContext.uniform3f(prg.lightAmbientUniform, 0.5, 0.5, 0.5);
-            glContext.uniform3f(prg.materialDiffuseUniform, 0.6, 0.6, 0.6);
-            glContext.uniform3f(prg.materialSpecularUniform, 0.3, 0.3, 0.3);
-            glContext.uniform1f(prg.shininessUniform, 1.0);
+            glContext.uniform3f(currentShader.lightPositionUniform, 1, 1, 1);
+            glContext.uniform3f(currentShader.lightAmbientUniform, 0.5, 0.5, 0.5);
+            glContext.uniform3f(currentShader.materialDiffuseUniform, 0.6, 0.6, 0.6);
+            glContext.uniform3f(currentShader.materialSpecularUniform, 0.3, 0.3, 0.3);
+            glContext.uniform1f(currentShader.shininessUniform, 1.0);
         }
 
         // Gestion des entrées utilisateur
@@ -384,12 +393,12 @@
             mat4.rotate(mvMatrix, mvMatrix, rotObject, [0, 1, 0]);
             mat4.translate(mvMatrix, mvMatrix, [moveXInWorld, moveYInWorld, -4.0 + distance]);
             mat4.multiply(mvMatrix, mvMatrix, rotationMatrix);
-            glContext.uniformMatrix4fv(prg.pMatrixUniform, false, pMatrix);
-            glContext.uniformMatrix4fv(prg.mvMatrixUniform, false, mvMatrix);
+            glContext.uniformMatrix4fv(currentShader.pMatrixUniform, false, pMatrix);
+            glContext.uniformMatrix4fv(currentShader.mvMatrixUniform, false, mvMatrix);
             mat4.copy(nMatrix, mvMatrix);
             mat4.invert(nMatrix, nMatrix);
             mat4.transpose(nMatrix, nMatrix);
-            glContext.uniformMatrix4fv(prg.nMatrixUniform, false, nMatrix);
+            glContext.uniformMatrix4fv(currentShader.nMatrixUniform, false, nMatrix);
             initLights();
             for (var i = 0; i < forest.length; i++) {
                 drawATree(forest[i]);
@@ -462,10 +471,10 @@
         // Dessin d'un élément de la scène
         function drawElement(vertexBuffer, normalBuffer, textureId) {
             glContext.bindBuffer(glContext.ARRAY_BUFFER, normalBuffer);
-            glContext.vertexAttribPointer(prg.vertexNormalAttribute, 3, glContext.FLOAT, false, 0, 0);
+            glContext.vertexAttribPointer(currentShader.vertexNormalAttribute, 3, glContext.FLOAT, false, 0, 0);
             glContext.bindBuffer(glContext.ARRAY_BUFFER, vertexBuffer);
-            glContext.vertexAttribPointer(prg.vertexPositionAttribute, 3, glContext.FLOAT, false, 0, 0);
-            glContext.uniform1i(prg.uColorTexture, currentTexID);
+            glContext.vertexAttribPointer(currentShader.vertexPositionAttribute, 3, glContext.FLOAT, false, 0, 0);
+            glContext.uniform1i(currentShader.uColorTexture, currentTexID);
             glContext.bindBuffer(glContext.ELEMENT_ARRAY_BUFFER, indexBuffer);
             glContext.drawElements(glContext.TRIANGLE_STRIP, indices.length, glContext.UNSIGNED_SHORT, 0);
         }
@@ -493,7 +502,7 @@
             glContext.bindTexture(glContext.TEXTURE_2D, texColorTab[4]);
             glContext.activeTexture(glContext.TEXTURE5);
             glContext.bindBuffer(glContext.ARRAY_BUFFER, textCoordsBuffer);
-            glContext.vertexAttribPointer(prg.textureCoordsAttribute, 2, glContext.FLOAT, false, 0, 0);
+            glContext.vertexAttribPointer(currentShader.textureCoordsAttribute, 2, glContext.FLOAT, false, 0, 0);
         }
 
         // Shaders initialisation
