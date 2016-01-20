@@ -242,10 +242,24 @@
         var nMatrix = mat4.create();
         var rotObject = 0;
         var forest = new Array();
-        
+
         function initShaderParameters() {
             currentShader = shaders[TERRAIN_SHADER];
             glContext.useProgram(currentShader);
+            currentShader.vertexPositionAttribute = glContext.getAttribLocation(currentShader, "aVertexPosition");
+            glContext.enableVertexAttribArray(currentShader.vertexPositionAttribute);
+            currentShader.vertexNormalAttribute = glContext.getAttribLocation(currentShader, "aVertexNormal");
+            glContext.enableVertexAttribArray(currentShader.vertexNormalAttribute);
+            currentShader.pMatrixUniform = glContext.getUniformLocation(currentShader, 'uPMatrix');
+            currentShader.mvMatrixUniform = glContext.getUniformLocation(currentShader, 'uMVMatrix');
+            currentShader.nMatrixUniform = glContext.getUniformLocation(currentShader, 'uNMatrix');
+            currentShader.lightPositionUniform = glContext.getUniformLocation(currentShader, 'uLightPosition');
+            currentShader.drawNormalUniform = glContext.getUniformLocation(currentShader, 'uDrawNormal');
+            currentShader.shininessUniform = glContext.getUniformLocation(currentShader, 'uShininess');
+            currentShader.waveUniform = glContext.getUniformLocation(currentShader, 'uWave');
+            currentShader.lightAmbientUniform = glContext.getUniformLocation(currentShader, 'uLightAmbient');
+            currentShader.materialDiffuseUniform = glContext.getUniformLocation(currentShader, 'uMaterialDiffuse');
+            currentShader.materialSpecularUniform = glContext.getUniformLocation(currentShader, 'uMaterialSpecular');
 
             currentShader = shaders[TREE_SHADER];
             glContext.useProgram(currentShader);
